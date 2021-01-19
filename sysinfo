@@ -1,0 +1,117 @@
+#!/bin/bash
+
+#set -x
+
+log2=sysinfo.$HOSTNAME
+scsi=/proc/scsi/scsi
+
+echo -e "$HOSTNAME\n" > $log2
+
+dmi=/sys/class/dmi/id
+if [ -e $dmi ]
+then
+    cat $dmi/bios_vendor >> $log2
+    cat $dmi/bios_version >> $log2
+    cat $dmi/bios_date >> $log2
+    echo -n -e "\n" >> $log2
+    cat $dmi/board_vendor >> $log2
+    cat $dmi/board_name >> $log2
+fi
+
+echo -n -e "\n" >> $log2
+uname -r >> $log2
+
+echo >> $log2
+free >> $log2
+
+echo >> $log2
+lscpu >> $log2
+echo -e "\nPCI\n" >> $log2
+lspci >> $log2
+echo -e "\nUSB\n" >> $log2
+lsusb >> $log2
+
+echo -e "\nDrives\n" >> $log2
+#cat /proc/scsi/scsi >> $log2
+while read line
+do
+    #echo $line
+    w1=$(echo $line|cut -d \  -f 1)
+    case $w1 in
+	"Host:")
+	    s=$(echo $line|cut -d \  -f 2)
+	    ;;
+	"Vendor:")
+	    drive=$(echo $line|cut -d \  -f 2-)
+	    ;;
+	"Type:")
+	    t=$(echo $line|cut -d \  -f 2)
+	    echo "$s $t $drive" >> $log2
+	    ;;
+    esac
+done < $scsi
+echo >> $log2
+if [ -e /proc/scsi/sg ]
+then
+    cat /proc/scsi/sg/device_strs >> $log2
+fi
+#set -x
+echo >> $log2
+# ATA Link 5 <unknown>
+for (( i=1 ; i<11 ; i++ ))
+do
+    link=/sys/class/ata_link/link$i
+    if [ ! -e $link ]
+    then
+	break
+    fi
+    s=$(cat $link/sata_spd)
+    [ "$s" != "<unknown>" ] && echo "ATA Link" $i $s >> $log2
+done
+#exit
+#set -x
+if [ -e /sys/class/drm/card0/device/uevent ]
+then
+    dr=$(grep "DRIVER=" /sys/class/drm/card0/device/uevent)
+    echo -e "\n$dr" >> $log2
+fi
+
+if [ -e /proc/driver/nvidia ]
+then
+    echo -e "\nNvidia\n" >> $log2
+    pci_adr=$(ls /proc/driver/nvidia/gpus)
+    cat /proc/driver/nvidia/gpus/$pci_adr/information >> $log2
+fi
+# DVB
+echo -e "\nDVB\n" >> $log2
+#set -x
+for (( i=0 ; i<10 ; i++ ))
+do
+    dvb=/sys/class/dvb/dvb$i.frontend0/device
+    if [ ! -e $dvb ]
+    then
+	break
+    fi
+    d=$(grep "DRIVER=" $dvb/uevent)
+    d=$(echo $d|cut -d '=' -f 2)
+    if [ "$d" == "usb" ]
+    then
+	p=$(grep "PRODUCT=" $dvb/uevent)
+	p=$(echo $p|cut -d '=' -f 2)
+	d="$d $p"
+    fi
+    if [ -e $dvb/manufacturer ]
+    then
+	d="$d "$(cat $dvb/manufacturer)
+    fi
+    if [ -e $dvb/product ]
+    then
+	d="$d "$(cat $dvb/product)
+    fi
+    echo $i $d >> $log2
+    #exit
+done
+
+echo -e "\nInterrupts\n" >> $log2
+cat /proc/interrupts >> $log2
+less $log2
