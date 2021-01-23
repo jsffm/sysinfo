@@ -1,6 +1,7 @@
 # sysinfo
 Shows system and hw info in a linux system
 
+<pre>
 gentoo
 
 American Megatrends Inc.
@@ -174,3 +175,4 @@ MIS:          0
 PIN:          0          0          0          0          0          0   Posted-interrupt notification event
 NPI:          0          0          0          0          0          0   Nested posted-interrupt event
 PIW:          0          0          0          0          0          0   Posted-interrupt wakeup event
+</pre>
