@@ -3,7 +3,6 @@
 #set -x
 
 log2=sysinfo.$HOSTNAME
-scsi=/proc/scsi/scsi
 
 echo -e "$HOSTNAME\n" > $log2
 
@@ -32,31 +31,8 @@ echo -e "\nUSB\n" >> $log2
 lsusb >> $log2
 
 echo -e "\nDrives\n" >> $log2
-#cat /proc/scsi/scsi >> $log2
-while read line
-do
-    #echo $line
-    w1=$(echo $line|cut -d \  -f 1)
-    case $w1 in
-	"Host:")
-	    s=$(echo $line|cut -d \  -f 2)
-	    ;;
-	"Vendor:")
-	    drive=$(echo $line|cut -d \  -f 2-)
-	    ;;
-	"Type:")
-	    t=$(echo $line|cut -d \  -f 2)
-	    echo "$s $t $drive" >> $log2
-	    ;;
-    esac
-done < $scsi
-echo >> $log2
-if [ -e /proc/scsi/sg ]
-then
-    cat /proc/scsi/sg/device_strs >> $log2
-fi
 #set -x
-echo >> $log2
+#echo >> $log2
 # ATA Link 5 <unknown>
 for (( i=1 ; i<11 ; i++ ))
 do
@@ -66,9 +42,41 @@ do
 	break
     fi
     s=$(cat $link/sata_spd)
-    [ "$s" != "<unknown>" ] && echo "ATA Link" $i $s >> $log2
+    #[ "$s" != "<unknown>" ] && echo "ATA Link" $i $s >> $log2
+    #[ "$s" != "<unknown>" ] && link[$i]="ATA Link $i $s"
+    [ "$s" != "<unknown>" ] && link[$i]="$s"
 done
 #exit
+scsi=/proc/scsi/scsi
+#cat /proc/scsi/scsi >> $log2
+#set -x
+s=scsi0
+while read line
+do
+    #echo $line
+    w1=$(echo $line|cut -d \  -f 1)
+    case $w1 in
+	"Host:")
+	    s=$(echo $line|cut -d \  -f 2)
+	    ;;
+	"Vendor:")
+	    #drive=$(echo $line|cut -d \  -f 2-)
+	    drive=${line:8}
+	    ;;
+	"Type:")
+	    t=$(echo $line|cut -d \  -f 2)
+	    i=$((${s:4}+1))
+	    #echo "$s $t $drive ${link[$i]}" >> $log2
+	    printf "%s %-13s %s %s\n" "$s" "$t" "$drive" "${link[$i]}" >> $log2
+	    ;;
+    esac
+done < $scsi
+#exit
+echo >> $log2
+#if [ -e /proc/scsi/sg ]
+#then
+#    cat /proc/scsi/sg/device_strs >> $log2
+#fi
 #set -x
 if [ -e /sys/class/drm/card0/device/uevent ]
 then
