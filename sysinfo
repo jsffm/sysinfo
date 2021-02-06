@@ -67,7 +67,7 @@ do
 	    t=$(echo $line|cut -d \  -f 2)
 	    i=$((${s:4}+1))
 	    #echo "$s $t $drive ${link[$i]}" >> $log2
-	    printf "%s %-13s %s %s\n" "$s" "$t" "$drive" "${link[$i]}" >> $log2
+	    printf "%-6s %-13s %s %s\n" "$s" "$t" "$drive" "${link[$i]}" >> $log2
 	    ;;
     esac
 done < $scsi
