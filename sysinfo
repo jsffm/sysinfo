@@ -67,7 +67,7 @@ do
 	    t=$(echo $line|cut -d \  -f 2)
 	    i=$((${s:4}+1))
 	    #echo "$s $t $drive ${link[$i]}" >> $log2
-	    printf "%-6s %-13s %s %s\n" "$s" "$t" "$drive" "${link[$i]}" >> $log2
+	    printf "%s %-13s %s %s\n" "$s" "$t" "$drive" "${link[$i]}" >> $log2
 	    ;;
     esac
 done < $scsi
@@ -96,25 +96,30 @@ echo -e "\nDVB\n" >> $log2
 for (( i=0 ; i<10 ; i++ ))
 do
     dvb=/sys/class/dvb/dvb$i.frontend0/device
-    if [ ! -e $dvb ]
-    then
-	break
-    fi
-    d=$(grep "DRIVER=" $dvb/uevent)
+    ca=/sys/class/dvb/dvb$i.ca0/device
+    #if [ ! -e $dvb -a -e $ca ]
+    #then
+	#break
+    #fi
+    device=
+    [ -e $ca ] && device=$ca
+    [ -e $dvb ] && device=$dvb
+    [ "$device" == "" ] && break
+    d=$(grep "DRIVER=" $device/uevent)
     d=$(echo $d|cut -d '=' -f 2)
     if [ "$d" == "usb" ]
     then
-	p=$(grep "PRODUCT=" $dvb/uevent)
+	p=$(grep "PRODUCT=" $device/uevent)
 	p=$(echo $p|cut -d '=' -f 2)
 	d="$d $p"
     fi
-    if [ -e $dvb/manufacturer ]
+    if [ -e $device/manufacturer ]
     then
-	d="$d "$(cat $dvb/manufacturer)
+	d="$d "$(cat $device/manufacturer)
     fi
-    if [ -e $dvb/product ]
+    if [ -e $device/product ]
     then
-	d="$d "$(cat $dvb/product)
+	d="$d "$(cat $device/product)
     fi
     echo $i $d >> $log2
     #exit
