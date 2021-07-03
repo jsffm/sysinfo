@@ -71,6 +71,22 @@ do
 	    ;;
     esac
 done < $scsi
+echo >> $log2
+nvm="/sys/block/*"
+for r in $nvm
+do
+    #echo $r
+    [ ! -e "$r/device" ] && continue
+    name=$(basename $r)
+    model=$(cat $r/device/model)
+    [ -e $r/device/firmware_rev ] && rev=$(cat $r/device/firmware_rev)
+    [ -e $r/device/rev ] && rev=$(cat $r/device/rev)
+    transport=$(cat $r/device/transport)
+    size=$(cat $r/size)
+    size=$(($size/2/1000000))
+    #echo $name $model $firmware_rev $size"G" $transport >> $log2
+    printf "%s Model: %-13s Rev: %s %s %s\n" $name "$model" $rev $size"G" $transport >> $log2
+done
 #exit
 echo >> $log2
 #if [ -e /proc/scsi/sg ]
