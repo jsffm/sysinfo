@@ -81,7 +81,7 @@ do
     model=$(cat $r/device/model)
     [ -e $r/device/firmware_rev ] && rev=$(cat $r/device/firmware_rev)
     [ -e $r/device/rev ] && rev=$(cat $r/device/rev)
-    transport=$(cat $r/device/transport)
+    [ -e $r/device/transport ] && transport=$(cat $r/device/transport)
     size=$(cat $r/size)
     size=$(($size/2/1000000))
     #echo $name $model $firmware_rev $size"G" $transport >> $log2
@@ -98,13 +98,22 @@ if [ -e /sys/class/drm/card0/device/uevent ]
 then
     dr=$(grep "DRIVER=" /sys/class/drm/card0/device/uevent)
     echo -e "\n$dr" >> $log2
+    [ -e /sys/class/drm/card0/device/current_link_speed ] && \
+	cat /sys/class/drm/card0/device/current_link_speed >> $log2
+    if [ -e /sys/class/drm/card0/device/current_link_width ]
+    then
+	echo -n "Width " >> $log2
+	cat /sys/class/drm/card0/device/current_link_width >> $log2
+    fi
 fi
+#exit
 
 if [ -e /proc/driver/nvidia ]
 then
     echo -e "\nNvidia\n" >> $log2
     pci_adr=$(ls /proc/driver/nvidia/gpus)
     cat /proc/driver/nvidia/gpus/$pci_adr/information >> $log2
+    cat /proc/driver/nvidia/version >> $log2
 fi
 # DVB
 echo -e "\nDVB\n" >> $log2
